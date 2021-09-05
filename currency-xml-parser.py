@@ -1,9 +1,41 @@
-# currency-xml-parser
-That program can parse www.cbr.ru and return to user the requested exchange rate. At the moment that program works only for rubles (Like a USD, Euro rate to rubles).  To get the requested currency rate (default value is 'JPY'):  Go to line 32 and replace 'JPY' with currency you need. Run code. P.S. Available currencies you can find here: http://www.cbr.ru/scripts/XML_daily.asp.
+import urllib.request
+from xml.dom.minidom import parseString
 
-How to use that program:
-1. Download .py file.
-2. Go to line 32 and replace "JPY" with currency you need.
-3. Run code and look into output.
 
-P.S. Available currencies you can find here: http://www.cbr.ru/scripts/XML_daily.asp.
+def get_data(url):  # getting data from url (XML file in that case)
+    web_file = urllib.request.urlopen(url)  # send result of request
+    return web_file.read()  # read web_file content
+
+
+def get_currencies_dictionary(xml_content):
+
+    dom = parseString(xml_content)
+    dom.normalize()
+
+    elements = dom.getElementsByTagName("Valute")
+    currency_dict = {}
+
+    for node in elements:  # that code finding requested nodes 
+        for child in node.childNodes:
+            if child.nodeType == 1:
+                if child.tagName == 'Value':
+                    if child.firstChild.nodeType == 3:
+                        value = float(child.firstChild.data.replace(',', '.'))
+                if child.tagName == 'CharCode':
+                    if child.firstChild.nodeType == 3:
+                        char_code = child.firstChild.data
+        currency_dict[char_code] = value
+    return currency_dict
+
+
+def print_dict(dict):
+    needed_currency = 'JPY'  # change JPY to parse another currency
+    needed_currency_value = dict[needed_currency]
+    if needed_currency in dict:
+        print(f'Курс {needed_currency} к рублю - {needed_currency_value}')
+
+
+if __name__ == '__main__':
+    url = 'http://www.cbr.ru/scripts/XML_daily.asp'
+    currency_dict = get_currencies_dictionary(get_data(url))
+    print_dict(currency_dict)
